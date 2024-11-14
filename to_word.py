@@ -5,10 +5,19 @@ from rich.progress import Progress
 from utils import check_filename_legal
 import concurrent.futures
 import logging
+import sys
+import re
 
+def get_executable_path():
+    if getattr(sys, 'frozen', False):
+        executable_path = pathlib.Path(sys.executable).resolve().parent
+    else:
+        executable_path = pathlib.Path(__file__).resolve().parent
+    return executable_path
 
 def data_to_word(datas):
-    output_dir = pathlib.Path("output")
+    script_dir = get_executable_path()
+    output_dir = script_dir / "output"
     output_dir.mkdir(exist_ok=True)
 
     with Progress() as progress:
@@ -28,7 +37,7 @@ def data_to_word(datas):
                 progress.update(task, advance=1)
 
 
-def write_to_word_task(filename, data):
+def write_to_word_task(root, data):
     # 建立一個 Word 文件
     doc = docx.Document()
 
@@ -62,14 +71,20 @@ def write_to_word_task(filename, data):
 
     # 內文 - 12pt，標楷體
     content_paragraph = doc.add_paragraph()
-    content_run = content_paragraph.add_run(data["content"])
-    content_run.font.size = Pt(12)
-    content_run.font.name = "標楷體"
+    content_parts = re.split(r"(\*\*.*?\*\*)", data["content"])
 
-    # 設置中文字體
-    rFonts = content_run._element.rPr.rFonts
-    rFonts.set(docx.oxml.ns.qn("w:eastAsia"), "標楷體")
+    for part in content_parts:
+        content_run = content_paragraph.add_run(part[2:-2] if part.startswith("**") and part.endswith("**") else part)
+        content_run.font.size = Pt(12)
+        content_run.font.name = "標楷體"
+        if part.startswith("**") and part.endswith("**"):
+            content_run.bold = True
+
+        # 設置中文字體
+        rFonts = content_run._element.rPr.rFonts
+        rFonts.set(docx.oxml.ns.qn("w:eastAsia"), "標楷體")
 
     # 儲存 Word 文件
-    filename = filename / check_filename_legal(f"{data['date']}_{data['title']}.docx")
+    filename = root / check_filename_legal(f"電子時報_{data['date']}") / check_filename_legal(f"{data['date']}_{data['title']}.docx")
+    filename.parent.mkdir(exist_ok=True)
     doc.save(filename)

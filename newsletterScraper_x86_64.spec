@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='newsletterScraper',
+    name='newsletterScraper_x86_64',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

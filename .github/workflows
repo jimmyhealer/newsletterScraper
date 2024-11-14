@@ -1,0 +1,57 @@
+name: Build Executables
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build Windows EXE
+        run: pyinstaller --onefile --name newsletterScraper flow.py
+
+      - name: Upload Windows EXE
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-exe
+          path: dist/newsletterScraper.exe
+
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build macOS EXE
+        run: |
+          arch -${{ matrix.arch }} python3 -m PyInstaller --onefile --name newsletterScraper flow.py
+
+      - name: Upload macOS EXE
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-${{ matrix.arch }}-exe
+          path: dist/newsletterScraper

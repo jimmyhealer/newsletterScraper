@@ -32,7 +32,12 @@ class ScraperService:
         label = soup.find("labal", class_="labal").get_text(strip=True)
         author = soup.find("div", class_="author").get_text(strip=True)
         content_div = soup.find("div", class_="content")
-        content = content_div.get_text("\n", strip=True)
+        for strong_tag in content_div.find_all("strong"):
+            strong_text = strong_tag.get_text(strip=True)
+            formatted_text = f"**{strong_text}**"
+            strong_tag.replace_with(formatted_text)
+
+        content = content_div.get_text("\n\n", strip=True)
         images = soup.find_all("img", class_="photo")
         image_urls = [img["src"] for img in images]
 
