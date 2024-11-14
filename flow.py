@@ -23,17 +23,33 @@ class Flow:
             self.login_without_credentials, self.request_verification_code
         )
         self.scraping_service = ScraperService()
+        self.loading_status = None
 
-    def login_without_credentials(self):
+    def loading_stop(self):
+        if self.loading_status:
+            self.loading_status.stop()
+        
+    def loading_start(self):
+        if self.loading_status:
+            self.loading_status.start()
+
+    def login_without_credentials(self, again=False):
         # 使用 rich 的 Prompt 來輸入帳號和密碼
+        self.loading_stop()
+        if again:
+            console.print("[red]帳號或密碼錯誤，請重新輸入[/red]")
         self.username = Prompt.ask("[bold blue]請輸入帳號[/bold blue]")
         self.password = Prompt.ask("[bold blue]請輸入密碼[/bold blue]", password=True)
+        self.loading_start()
 
         return self.username, self.password
 
     def request_verification_code(self):
         # 使用 rich 的 Prompt 來輸入驗證碼
-        return Prompt.ask("[bold blue]請輸入驗證碼[/bold blue]")
+        self.loading_stop()
+        code = Prompt.ask("[bold blue]請輸入驗證碼[/bold blue]")
+        self.loading_start()
+        return code
 
     def input_calendar_date(self):
         # 顯示當月日曆
@@ -86,9 +102,10 @@ class Flow:
             with console.status(
                 "[bold yellow]正在重新登入...[/bold yellow]", spinner="dots"
             ) as status:
+                self.loading_status = status
                 # 使用瀏覽器重新登錄
                 self.session, self.member_id, self.use = (
-                    self.login_handler.login_and_get_cookies(status)
+                    self.login_handler.login_and_get_cookies()
                 )
 
             # 登錄成功後顯示提示

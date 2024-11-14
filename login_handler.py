@@ -48,7 +48,7 @@ class DigitimesLogin:
         logger.debug("Human-like delay for %.2f seconds.", delay)
         time.sleep(delay)
 
-    def login_and_get_cookies(self, loading_status):
+    def login_and_get_cookies(self):
         # Delay loading the driver until it is needed
         if not self.driver:
             self.driver = self._setup_driver()
@@ -58,41 +58,47 @@ class DigitimesLogin:
             self.driver.get(url)
             logger.info("Opened the login page: %s", url)
 
-            logger.debug("Waiting for the email input field to load...")
-            email_input = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.ID, "checkid"))
-            )
-            logger.debug("Email input field loaded successfully.")
 
-            try:
-                password_input = self.driver.find_element(By.ID, "checkpwd")
-                logger.debug("Password input field found.")
-            except NoSuchElementException:
-                logger.error("Password input field not found on the page.")
-                return
+            success = False
 
-            logger.info("Entering email and password...")
-            email_input.send_keys(self.email)
-            self._human_like_delay()
-            logger.debug("Email entered.")
+            while not success:
+                logger.debug("Waiting for the email input field to load...")
+                email_input = WebDriverWait(self.driver, 15).until(
+                    EC.presence_of_element_located((By.ID, "checkid"))
+                )
+                logger.debug("Email input field loaded successfully.")
 
-            password_input.send_keys(self.password)
-            self._human_like_delay()
-            logger.debug("Password entered.")
+                try:
+                    password_input = self.driver.find_element(By.ID, "checkpwd")
+                    logger.debug("Password input field found.")
+                except NoSuchElementException:
+                    logger.error("Password input field not found on the page.")
+                    return
 
-            logger.info("Clicking the login button...")
-            login_button = self.driver.find_element(By.CLASS_NAME, "my-button")
-            ActionChains(self.driver).move_to_element(login_button).click().perform()
-            logger.debug("Login button clicked.")
+                logger.info("Entering email and password...")
+                email_input.send_keys(self.email)
+                self._human_like_delay()
+                logger.debug("Email entered.")
 
-            try:
-                WebDriverWait(self.driver, 3).until(EC.alert_is_present())
-                alert = self.driver.switch_to.alert
-                logger.warning("An alert appeared: %s", alert.text)
-                alert.accept()
-                logger.debug("Alert was accepted.")
-            except TimeoutException:
-                logger.info("No alert dialog appeared after clicking the login button.")
+                password_input.send_keys(self.password)
+                self._human_like_delay()
+                logger.debug("Password entered.")
+
+                logger.info("Clicking the login button...")
+                login_button = self.driver.find_element(By.CLASS_NAME, "my-button")
+                ActionChains(self.driver).move_to_element(login_button).click().perform()
+                logger.debug("Login button clicked.")
+
+                try:
+                    WebDriverWait(self.driver, 5).until(EC.alert_is_present())
+                    alert = self.driver.switch_to.alert
+                    logger.warning("An alert appeared: %s", alert.text)
+                    alert.accept()
+                    logger.debug("Alert was accepted.")
+                    self.email, self.password = self.input_credentials_callback(True)
+                except TimeoutException:
+                    logger.info("No alert dialog appeared after clicking the login button.")
+                    success = True
 
             logger.debug("Waiting for verification code input fields to load...")
             input_elements = WebDriverWait(self.driver, 10).until(
@@ -106,9 +112,7 @@ class DigitimesLogin:
             success = False
 
             while not success:
-                loading_status.stop()
                 verify_code = self.input_verification_code_callback()
-                loading_status.start()
                 for i, element in enumerate(input_elements):
                     element.send_keys(verify_code[i])
                     logger.debug("Entered digit %s of the verification code.", i + 1)
@@ -145,8 +149,7 @@ class DigitimesLogin:
 
         except Exception as e:
             logger.exception("An unexpected error occurred: %s", str(e))
+            raise e
         finally:
             self.driver.quit()
             logger.info("Browser session closed.")
-
-        return tuple(self.need_cookies.values())
