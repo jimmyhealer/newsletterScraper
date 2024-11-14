@@ -1,9 +1,10 @@
 import docx
 from docx.shared import Pt, Cm
 import pathlib
-from utils import check_filename_legal
 from rich.progress import Progress
+from utils import check_filename_legal
 import concurrent.futures
+import logging
 
 
 def data_to_word(datas):
@@ -57,11 +58,11 @@ def write_to_word_task(filename, data):
         try:
             doc.add_picture(images, width=Cm(16))
         except Exception as e:
-            print(f"Error inserting image {images}: {e}")
-
+            logging.error(f"Error inserting image {images}: {e}")
+    
     # 內文 - 12pt，標楷體
     content_paragraph = doc.add_paragraph()
-    content_run = content_paragraph.add_run(data["內文"])
+    content_run = content_paragraph.add_run(data["content"])
     content_run.font.size = Pt(12)
     content_run.font.name = "標楷體"
 
@@ -70,4 +71,5 @@ def write_to_word_task(filename, data):
     rFonts.set(docx.oxml.ns.qn("w:eastAsia"), "標楷體")
 
     # 儲存 Word 文件
+    filename = filename / check_filename_legal(data["title"] + ".docx") 
     doc.save(filename)

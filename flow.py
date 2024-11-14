@@ -20,11 +20,11 @@ console = Console()
 
 class Flow:
     def __init__(self):
+        self.loading_status = None
         self.login_handler = DigitimesLogin(
             self.login_without_credentials, self.request_verification_code
         )
         self.scraping_service = ScraperService()
-        self.loading_status = None
 
     def loading_stop(self):
         if self.loading_status:
