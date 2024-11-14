@@ -2,7 +2,7 @@ import concurrent.futures
 from db import CredentialManager
 from request import NewsletterRequest
 from bs4 import BeautifulSoup
-from utils import add_working_day, closest_weekday_before_today
+from utils import closest_weekday_before_today
 import re
 from io import BytesIO
 from rich.progress import Progress
@@ -62,8 +62,7 @@ class ScraperService:
         matches = self._parse_newsletter(response)
         return len(matches) == 0
 
-    def get_newsletter_ids(self, date_str=None):
-        need_dates = add_working_day(date_str)
+    def get_newsletter_ids(self, need_dates=None):
         matches = []
         with Progress() as progress:
             task = progress.add_task("[cyan] 正在抓取新聞 ID ...", total=len(need_dates))

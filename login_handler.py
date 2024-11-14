@@ -95,7 +95,8 @@ class DigitimesLogin:
                     logger.warning("An alert appeared: %s", alert.text)
                     alert.accept()
                     logger.debug("Alert was accepted.")
-                    self.email, self.password = self.input_credentials_callback(True)
+                    self.email, self.password = self.input_credentials_callback(again=True)
+                    self.credentials.set_username_and_password(self.email, self.password)
                 except TimeoutException:
                     logger.info("No alert dialog appeared after clicking the login button.")
                     success = True

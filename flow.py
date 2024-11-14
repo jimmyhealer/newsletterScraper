@@ -3,6 +3,7 @@ import logging
 from login_handler import DigitimesLogin
 from service import ScraperService
 from to_word import data_to_word
+from utils import add_working_day
 from rich.console import Console
 from rich.prompt import Prompt
 import calendar
@@ -28,7 +29,7 @@ class Flow:
     def loading_stop(self):
         if self.loading_status:
             self.loading_status.stop()
-        
+
     def loading_start(self):
         if self.loading_status:
             self.loading_status.start()
@@ -39,7 +40,7 @@ class Flow:
         if again:
             console.print("[red]帳號或密碼錯誤，請重新輸入[/red]")
         self.username = Prompt.ask("[bold blue]請輸入帳號[/bold blue]")
-        self.password = Prompt.ask("[bold blue]請輸入密碼[/bold blue]", password=True)
+        self.password = Prompt.ask("[bold blue]請輸入密碼[/bold blue]")
         self.loading_start()
 
         return self.username, self.password
@@ -50,6 +51,53 @@ class Flow:
         code = Prompt.ask("[bold blue]請輸入驗證碼[/bold blue]")
         self.loading_start()
         return code
+
+    def input_date_range(self):
+        success = False
+        while not success:
+            try:
+                start_date = Prompt.ask(
+                    "[bold blue]請輸入開始日期 (YYYY/MM/DD)[/bold blue]"
+                )
+                end_date = Prompt.ask(
+                    "[bold blue]請輸入結束日期 (YYYY/MM/DD)[/bold blue]"
+                )
+
+                working_days = working_days_between(start_date, end_date)
+                if working_days < 0:
+                    console.print("[red]結束日期不能小於開始日期[/red]")
+                    continue
+
+                console.print(f"[green]總共需要抓取 {working_days} 天[/green]")
+                success = True
+            except ValueError:
+                console.print("[red]日期格式錯誤，請重新輸入[/red]")
+                continue
+
+        return add_working_day(start_date, end_date)
+
+    def input_single_date(self):
+        success = False
+        while not success:
+            try:
+                now = datetime.now()
+                now_str = now.strftime("%Y/%m/%d")
+                date = Prompt.ask(
+                    "[bold blue]請輸入要抓取的日期 (YYYY/MM/DD)[/bold blue]",
+                    default=now_str
+                )
+                input_date = datetime.strptime(date, "%Y/%m/%d")
+
+                if input_date > now:
+                    console.print("[red]日期不能大於今天[/red]")
+                    continue
+
+                success = True
+            except ValueError:
+                console.print("[red]日期格式錯誤，請重新輸入[/red]")
+                continue
+
+        return [date]
 
     def input_calendar_date(self):
         # 顯示當月日曆
@@ -62,34 +110,17 @@ class Flow:
         console.print("[bold yellow]當月日曆:[/bold yellow]")
         console.print(cal.formatmonth(year, month))
 
+        date_option = Prompt.ask(
+            "[bold blue]選擇日期輸入模式: 1. 單一日期 2. 開始和結束日期 (輸入 1 或 2)[/bold blue]",
+            choices=["1", "2"],
+            default="1",
+        )
+
         # 用戶輸入日期
-        success = False
-        while not success:
-            try:
-                date = Prompt.ask(
-                    "[bold blue]請輸入從哪天開始抓取 (YYYY/MM/DD)[/bold blue]"
-                )
-                working_days = working_days_between(date)
-
-                if working_days < 0:
-                    console.print("[red]日期不能大於今天[/red]")
-                    continue
-
-                if working_days > 10:
-                    console.print(
-                        f"[red]總共 {working_days} 天，會有較長的等待時間[/red]"
-                    )
-                    response = Prompt.ask("[bold blue]是否繼續？(y/n)[/bold blue]")
-                    if response.lower() != "y":
-                        continue
-
-                success = True
-            except ValueError:
-                console.print("[red]日期格式錯誤，請重新輸入[/red]")
-                continue
-
-        console.print(f"[green]總共需要抓取 {working_days} 天[/green]")
-        return date
+        if date_option == "2":
+            return self.input_date_range()
+        else:
+            return self.input_single_date()
 
     def run(self):
         console.rule("[bold yellow]歡迎使用數位電子報抓取工具[/bold yellow]")
@@ -118,8 +149,9 @@ class Flow:
             self.scraping_service.update_cookies(self.session, self.member_id, self.use)
 
         # 獲取日曆
-        date_str = self.input_calendar_date()
-        matches = self.scraping_service.get_newsletter_ids(date_str)
+        dates = self.input_calendar_date()
+        matches = self.scraping_service.get_newsletter_ids(dates)
+        console.print(f"[green]總共抓取到 {len(matches)} 篇新聞[/green]")
 
         # 使用 rich 的進度條顯示抓取進度
         datas = self.scraping_service.get_newsletter_content(matches)
