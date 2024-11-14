@@ -50,4 +50,4 @@ def add_working_day(start_date_str, end_date_str=None):
 def check_filename_legal(filename):
     # Remove characters that are not alphanumeric, spaces, dots, underscores, or Chinese characters
     legal_filename = re.sub(r'[^\w\s._\u4e00-\u9fff]', '', filename)
-    return legal_filename.rstrip()
+    return legal_filename.rstrip().replace(' ', '').replace('　', '')

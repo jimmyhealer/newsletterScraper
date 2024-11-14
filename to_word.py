@@ -59,7 +59,7 @@ def write_to_word_task(filename, data):
             doc.add_picture(images, width=Cm(16))
         except Exception as e:
             logging.error(f"Error inserting image {images}: {e}")
-    
+
     # 內文 - 12pt，標楷體
     content_paragraph = doc.add_paragraph()
     content_run = content_paragraph.add_run(data["content"])
@@ -71,5 +71,5 @@ def write_to_word_task(filename, data):
     rFonts.set(docx.oxml.ns.qn("w:eastAsia"), "標楷體")
 
     # 儲存 Word 文件
-    filename = filename / check_filename_legal(data["title"] + ".docx") 
+    filename = filename / check_filename_legal(f"{data['date']}_{data['title']}.docx")
     doc.save(filename)

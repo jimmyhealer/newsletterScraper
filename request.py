@@ -12,15 +12,19 @@ class NewsletterRequest:
         }
 
     def update_cookies(self, session, member_id, use):
-        self.cookies.update({
-            "ProductDCMSession": session,
-            "ProductDCMMemberID": member_id,
-            "ProductDCMUse": use,
-        })
+        self.cookies.update(
+            {
+                "ProductDCMSession": session,
+                "ProductDCMMemberID": member_id,
+                "ProductDCMUse": use,
+            }
+        )
 
     def send(self, method, url, **kwargs):
         headers = {
-            "cookie": "; ".join([f"{key}={value}" for key, value in self.cookies.items()]),
+            "cookie": "; ".join(
+                [f"{key}={value}" for key, value in self.cookies.items()]
+            ),
         }
         kwargs["headers"] = headers
 
@@ -33,9 +37,9 @@ class NewsletterRequest:
     def get_newsletter(self, date=None):
         url = f"https://www.digitimes.com.tw/mservice/dailynews_pc/?pub_date={date}"
         response = self.get(url)
-        return response
+        return response, date
 
-    def get_newsletter_content(self, id):
+    def get_newsletter_content(self, id, date=None):
         url = f"https://www.digitimes.com.tw/mservice/dailynews_pc/shwnws.asp?id={id}"
         response = self.get(url)
-        return response
+        return response, date

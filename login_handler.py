@@ -58,7 +58,6 @@ class DigitimesLogin:
             self.driver.get(url)
             logger.info("Opened the login page: %s", url)
 
-
             success = False
 
             while not success:
@@ -86,7 +85,9 @@ class DigitimesLogin:
 
                 logger.info("Clicking the login button...")
                 login_button = self.driver.find_element(By.CLASS_NAME, "my-button")
-                ActionChains(self.driver).move_to_element(login_button).click().perform()
+                ActionChains(self.driver).move_to_element(
+                    login_button
+                ).click().perform()
                 logger.debug("Login button clicked.")
 
                 try:
@@ -95,10 +96,16 @@ class DigitimesLogin:
                     logger.warning("An alert appeared: %s", alert.text)
                     alert.accept()
                     logger.debug("Alert was accepted.")
-                    self.email, self.password = self.input_credentials_callback(again=True)
-                    self.credentials.set_username_and_password(self.email, self.password)
+                    self.email, self.password = self.input_credentials_callback(
+                        again=True
+                    )
+                    self.credentials.set_username_and_password(
+                        self.email, self.password
+                    )
                 except TimeoutException:
-                    logger.info("No alert dialog appeared after clicking the login button.")
+                    logger.info(
+                        "No alert dialog appeared after clicking the login button."
+                    )
                     success = True
 
             logger.debug("Waiting for verification code input fields to load...")
@@ -132,7 +139,9 @@ class DigitimesLogin:
                     logger.debug("Alert was accepted.")
                 except TimeoutException:
                     success = True
-                    logger.info("No alert dialog appeared after clicking the verify button.")
+                    logger.info(
+                        "No alert dialog appeared after clicking the verify button."
+                    )
 
             logger.debug("Collecting cookies from the browser...")
             WebDriverWait(self.driver, 10).until(

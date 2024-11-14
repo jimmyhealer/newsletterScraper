@@ -84,7 +84,7 @@ class Flow:
                 now_str = now.strftime("%Y/%m/%d")
                 date = Prompt.ask(
                     "[bold blue]請輸入要抓取的日期 (YYYY/MM/DD)[/bold blue]",
-                    default=now_str
+                    default=now_str,
                 )
                 input_date = datetime.strptime(date, "%Y/%m/%d")
 

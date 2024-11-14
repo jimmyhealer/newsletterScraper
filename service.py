@@ -7,6 +7,7 @@ import re
 from io import BytesIO
 from rich.progress import Progress
 
+
 class ScraperService:
     def __init__(self):
         self.credential_manager = CredentialManager()
@@ -19,15 +20,15 @@ class ScraperService:
         self.session, self.member_id, self.use = session, member_id, use
         self.credential_manager.set_product_dcm(session, member_id, use)
 
-    def _parse_newsletter(self, response):
+    def _parse_newsletter(self, response, date=None):
         regex = r"getContent\('(\d+)'\)"
         matches = re.findall(regex, response.text)
+        matches = [(match, date) for match in matches]
         return matches
 
-    def _parse_newsletter_content(self, response):
+    def _parse_newsletter_content(self, response, date):
         soup = BeautifulSoup(response.text, "html.parser")
         main_title = soup.find("div", class_="main-title").get_text(strip=True)
-
         label = soup.find("labal", class_="labal").get_text(strip=True)
         author = soup.find("div", class_="author").get_text(strip=True)
         content_div = soup.find("div", class_="content")
@@ -49,6 +50,7 @@ class ScraperService:
             "author": author,
             "content": content,
             "images": images,
+            "date": date,
         }
 
         return data
@@ -58,14 +60,16 @@ class ScraperService:
             return True
 
         today = closest_weekday_before_today()
-        response = self.request.get_newsletter(today)
+        response, _ = self.request.get_newsletter(today)
         matches = self._parse_newsletter(response)
         return len(matches) == 0
 
     def get_newsletter_ids(self, need_dates=None):
         matches = []
         with Progress() as progress:
-            task = progress.add_task("[cyan] 正在抓取新聞 ID ...", total=len(need_dates))
+            task = progress.add_task(
+                "[cyan] 正在抓取新聞 ID ...", total=len(need_dates)
+            )
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 future_to_date = {
                     executor.submit(self.request.get_newsletter, date): date
@@ -74,8 +78,8 @@ class ScraperService:
 
                 for future in concurrent.futures.as_completed(future_to_date):
                     try:
-                        response = future.result()
-                        matches.extend(self._parse_newsletter(response))
+                        response, date = future.result()
+                        matches.extend(self._parse_newsletter(response, date))
                     except Exception as e:
                         print(
                             f"Error fetching newsletter id for {future_to_date[future]}: {e}"
@@ -91,14 +95,14 @@ class ScraperService:
             task = progress.add_task("[cyan] 正在抓取新聞內容...", total=len(ids))
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 future_to_id = {
-                    executor.submit(self.request.get_newsletter_content, id): id
+                    executor.submit(self.request.get_newsletter_content, id[0], id[1]): id
                     for id in ids
                 }
 
                 for future in concurrent.futures.as_completed(future_to_id):
                     try:
-                        response = future.result()
-                        datas.append(self._parse_newsletter_content(response))
+                        response, date = future.result()
+                        datas.append(self._parse_newsletter_content(response, date))
                     except Exception as e:
                         print(
                             f"Error fetching newsletter content for {future_to_id[future]}: {e}"
