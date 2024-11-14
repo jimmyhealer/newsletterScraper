@@ -1,30 +1,53 @@
 import shelve
+import os
+import platform
 
 
-def get_username_and_password():
-    with shelve.open("credentials") as db:
-        username = db.get("username", "")
-        password = db.get("password", "")
-    return username, password
+class DatasourceManager:
+    def __init__(self, db_name="datasource"):
+        home_dir = os.path.expanduser("~")
+        if platform.system() in ["Darwin", "Linux"]:
+            self.base_path = os.path.join(home_dir, ".datasource")
+        elif platform.system() == "Windows":
+            self.base_path = os.path.join(home_dir, "AppData", "Local", "datasource")
+        else:
+            raise Exception("Unsupported operating system")
+
+        os.makedirs(self.base_path, exist_ok=True)
+        self.db_path = os.path.join(self.base_path, f"newsletter_scraper_{db_name}.db")
+
+    def clear(self):
+        with shelve.open(self.db_path) as db:
+            db.clear()
+
+    def get(self, *keys):
+        with shelve.open(self.db_path) as db:
+            return tuple(db.get(key, "") for key in keys)
+
+    def set(self, **kwargs):
+        with shelve.open(self.db_path) as db:
+            for key, value in kwargs.items():
+                db[key] = value
 
 
-def set_username_and_password(username, password):
-    with shelve.open("credentials") as db:
-        db["username"] = username
-        db["password"] = password
+class CredentialManager(DatasourceManager):
+    def __init__(self, db_name="credentials"):
+        super().__init__(db_name)
 
+    def get_username_and_password(self):
+        return self.get("username", "password")
 
-def get_product_dcm():
-    with shelve.open("credentials") as db:
-        product_dcm_session = db.get("product_dcm_session", "")
-        product_dcm_member_id = db.get("product_dcm_member_id", "")
-        product_dcm_use = db.get("product_dcm_use", "")
+    def set_username_and_password(self, username, password):
+        self.set(username=username, password=password)
 
-    return product_dcm_session, product_dcm_member_id, product_dcm_use
+    def get_product_dcm(self):
+        return self.get(
+            "product_dcm_session", "product_dcm_member_id", "product_dcm_use"
+        )
 
-
-def set_product_dcm(session, member_id, use):
-    with shelve.open("credentials") as db:
-        db["product_dcm_session"] = session
-        db["product_dcm_member_id"] = member_id
-        db["product_dcm_use"] = use
+    def set_product_dcm(self, session, member_id, use):
+        return self.set(
+            product_dcm_session=session,
+            product_dcm_member_id=member_id,
+            product_dcm_use=use,
+        )

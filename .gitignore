@@ -1,6 +1,14 @@
+.DS_Store
+
 *.json
 *.png
 *.jpg
 *.db
+*.log
+output.docx
 
 venv
+__pycache__
+build
+dist
+output
