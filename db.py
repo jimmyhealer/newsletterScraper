@@ -1,6 +1,6 @@
-import shelve
 import os
 import platform
+import dbm.dumb as dbm
 
 
 class DatasourceManager:
@@ -17,15 +17,15 @@ class DatasourceManager:
         self.db_path = os.path.join(self.base_path, f"newsletter_scraper_{db_name}.db")
 
     def clear(self):
-        with shelve.open(self.db_path) as db:
+        with dbm.open(self.db_path) as db:
             db.clear()
 
     def get(self, *keys):
-        with shelve.open(self.db_path) as db:
-            return tuple(db.get(key, "") for key in keys)
+        with dbm.open(self.db_path) as db:
+            return tuple([db.get(key, b"").decode('utf-8') for key in keys])
 
     def set(self, **kwargs):
-        with shelve.open(self.db_path) as db:
+        with dbm.open(self.db_path) as db:
             for key, value in kwargs.items():
                 db[key] = value
 
