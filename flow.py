@@ -80,12 +80,12 @@ class Flow:
         success = False
         while not success:
             try:
-                now = datetime.now()
-                now_str = now.strftime("%Y/%m/%d")
+                now_str = closest_weekday_before_today()
                 date = Prompt.ask(
                     "[bold blue]請輸入要抓取的日期 (YYYY/MM/DD)[/bold blue]",
                     default=now_str,
                 )
+                now = datetime.strptime(now_str, "%Y/%m/%d")
                 input_date = datetime.strptime(date, "%Y/%m/%d")
 
                 if input_date > now:
@@ -125,7 +125,7 @@ class Flow:
     def run(self):
         console.rule("[bold yellow]歡迎使用數位電子報抓取工具[/bold yellow]")
         # 檢查 session 是否過期
-        if self.scraping_service.check_session_expired():
+        while self.scraping_service.check_session_expired():
             logging.warning("Session expired, logging in again...")
             console.print("[bold yellow] 登入 [/bold yellow]")
 
