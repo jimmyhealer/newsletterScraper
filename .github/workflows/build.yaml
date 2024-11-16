@@ -1,57 +1,40 @@
-name: Build Executables
+name: Build Multi-Platform
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: '3.9'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Build Windows EXE
-        run: pyinstaller --onefile --name newsletterScraper flow.py
-
-      - name: Upload Windows EXE
-        uses: actions/upload-artifact@v3
-        with:
-          name: windows-exe
-          path: dist/newsletterScraper.exe
-
-  build-macos:
-    runs-on: macos-latest
+  build:
     strategy:
       matrix:
-        arch: [x86_64, arm64]
+        os: [macos-latest, macos-13, windows-latest]
+        python-version: [3.12]
+
+    runs-on: ${{ matrix.os }}
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: '3.9'
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Build macOS EXE
         run: |
-          arch -${{ matrix.arch }} python3 -m PyInstaller --onefile --name newsletterScraper flow.py
+          pip install -r requirements.txt
 
-      - name: Upload macOS EXE
+      - name: Build EXE
+        run: |
+          python3 -m PyInstaller --onefile --name newsletterScraper flow.py
+        shell: bash
+
+      - name: Upload EXE
         uses: actions/upload-artifact@v3
         with:
-          name: macos-${{ matrix.arch }}-exe
-          path: dist/newsletterScraper
+          name: ${{ matrix.os }}-exe
+          path: dist/newsletterScraper*
