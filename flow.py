@@ -135,7 +135,7 @@ class Flow:
             ) as status:
                 self.loading_status = status
                 # 使用瀏覽器重新登錄
-                self.session, self.member_id, self.use = (
+                session, member_id, use = (
                     self.login_handler.login_and_get_cookies()
                 )
 
@@ -144,9 +144,9 @@ class Flow:
 
             # Debug 訊息記錄
             logging.debug(
-                f"session: {self.session}, member_id: {self.member_id}, use: {self.use}"
+                f"session: {session}, member_id: {member_id}, use: {use}"
             )
-            self.scraping_service.update_cookies(self.session, self.member_id, self.use)
+            self.scraping_service.update_cookies(session, member_id, use)
 
         # 獲取日曆
         dates = self.input_calendar_date()

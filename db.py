@@ -5,6 +5,7 @@ import dbm.dumb as dbm
 
 class DatasourceManager:
     def __init__(self, db_name="datasource"):
+        self.version = "2024111700"
         home_dir = os.path.expanduser("~")
         if platform.system() in ["Darwin", "Linux"]:
             self.base_path = os.path.join(home_dir, ".datasource")
@@ -14,7 +15,7 @@ class DatasourceManager:
             raise Exception("Unsupported operating system")
 
         os.makedirs(self.base_path, exist_ok=True)
-        self.db_path = os.path.join(self.base_path, f"newsletter_scraper_{db_name}.db")
+        self.db_path = os.path.join(self.base_path, f"newsletter_scraper_{db_name}_{self.version}.db")
 
     def clear(self):
         with dbm.open(self.db_path) as db:

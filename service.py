@@ -19,6 +19,7 @@ class ScraperService:
     def update_cookies(self, session, member_id, use):
         self.session, self.member_id, self.use = session, member_id, use
         self.credential_manager.set_product_dcm(session, member_id, use)
+        self.request.update_cookies(session, member_id, use)
 
     def _parse_newsletter(self, response, date=None):
         regex = r"getContent\('(\d+)'\)"
